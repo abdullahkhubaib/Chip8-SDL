@@ -185,6 +185,39 @@ void chip8::update() {
             else if(!(key & (1 << reg[(opcode & 0x0F00) >> 8])))
                 pc += 2;
             break;
+        case 0xF000:
+            switch (opcode & 0x00FF) {
+                case 0x0007:
+                    reg[(opcode & 0x0F00) >> 8] = dt;
+                    break;
+                case 0x0015:
+                    dt = reg[(opcode & 0x0F00) >> 8];
+                    break;
+                case 0x0018:
+                    st = reg[(opcode & 0x0F00) >> 8];
+                    break;
+                case 0x001E:
+                    if(index + reg[(opcode & 0x0F00) >> 8] > 0x0FFF)
+                        reg[0xF] = 1;
+                    index += reg[(opcode & 0x0F00) >> 8];
+                    break;
+                case 0x000A:
+                    if(!(key & (1 << reg[(opcode & 0x0F00) >> 8])))
+                        pc -= 2;
+                    break;
+                case 0x0029:
+                    index = 0x050 + (5 * (reg[(opcode & 0x0F00) >> 8] & 0x000F));
+                    break;
+                case 0x0033:
+                    break;
+                case 0x0055:
+                    break;
+                case 0x0065:
+                    break;
+                default:
+                    invalid_opcode(opcode);
+            }
+            break;
         default:
             invalid_opcode(opcode);
     }
