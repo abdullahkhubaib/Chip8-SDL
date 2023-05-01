@@ -5,7 +5,7 @@ chip8::chip8(const std::string& fName) : reg(), stack(), prev_frame(), frame_buf
     index = 0;
     pc = 0x200;
     key = 0;
-    sp = 0;
+    sp = -1;
     dt = 0;
     st = 0;
     running = false;
@@ -92,7 +92,11 @@ void chip8::update() {
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
                 SDL_RenderClear(renderer);
             } else if(opcode == 0x00EE) {
-
+                if(sp < 0) {
+                    std::cout << "Illegal return at PC: " << pc << std::endl;
+                    exit(1);
+                }
+                pc = stack[sp--];
             } else
                 invalid_opcode(opcode);
             break;
@@ -100,6 +104,12 @@ void chip8::update() {
             pc = opcode & 0x0FFF;
             break;
         case 0x2000:
+            if(sp > 0xF) {
+                std::cout << "Stack Overflow at PC: " << pc << std::endl;
+                exit(1);
+            }
+            stack[++sp] = pc;
+            pc = opcode & 0x0FFF;
             break;
         case 0x3000:
             if(reg[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))

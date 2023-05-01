@@ -12,7 +12,7 @@
 class chip8 {
 private:
     std::array<uint8_t, 16> reg;
-    std::array<uint8_t, 64> stack;
+    std::array<uint16_t, 16> stack;
     std::array<uint64_t, 32> prev_frame;
     std::array<uint64_t, 32> frame_buffer;
     std::array<uint8_t, 4096> mem;
