@@ -89,8 +89,8 @@ void chip8::update() {
     switch(opcode & 0xF000) {
         case 0x0000:
             if(opcode == 0x00E0) {
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                SDL_RenderClear(renderer);
+                for(uint64_t& i: frame_buffer)
+                    i = 0;
             } else if(opcode == 0x00EE) {
                 if(sp < 0) {
                     std::cout << "Illegal return at PC: " << pc << std::endl;
@@ -190,8 +190,12 @@ void chip8::update() {
             const int y = V[(opcode & 0x00F0) >> 4] & 0b00011111;
             const int n = opcode & 0x000F;
             V[0xF] = 0;
-            for(int i = 0; i < n; i++) {
-                uint64_t mask = ((uint64_t) mem[i + index]) << (63ULL - x);
+            for(int i = 0; i < n && (i + y) < 32; i++) {
+                uint64_t mask;
+                if(56 - x > 0)
+                    mask = ((uint64_t) mem[i + index]) << (56ULL - x);
+                else
+                    mask = ((uint64_t) mem[i + index]) >> (x - 56ULL);
                 frame_buffer[y + i] ^= mask;
                 V[0xF] = ((frame_buffer[y + i] & mask) == mask) ? 1 : 0;
             }

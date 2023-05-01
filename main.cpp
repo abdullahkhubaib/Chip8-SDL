@@ -11,7 +11,7 @@ int main(int argc, char* args[]) {
         c8.handleEvents();
         c8.update();
         c8.render();
-        SDL_Delay(20);
+        SDL_Delay(10);
     }
 
     return 0;
