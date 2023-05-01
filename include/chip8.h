@@ -6,6 +6,8 @@
 #include <fstream>
 #include <iostream>
 #include <random>
+#include <string>
+#include <bitset>
 #include "SDL.h"
 #define SCALE_RATIO 16
 
@@ -17,9 +19,9 @@ private:
     std::array<uint64_t, 32> frame_buffer;
     std::array<uint8_t, 4096> mem;
     static const uint8_t characters[16][5];
+    std::bitset<16> key;
     uint16_t index;
     uint16_t pc;
-    uint16_t key;
     uint8_t sp;
     uint8_t dt;
     uint8_t st;

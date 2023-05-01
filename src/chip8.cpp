@@ -1,10 +1,9 @@
-#include <string>
+
 #include "../include/chip8.h"
 
-chip8::chip8(const std::string& fName) : V(), stack(), prev_frame(), frame_buffer(), mem() {
+chip8::chip8(const std::string& fName) : V(), stack(), prev_frame(), frame_buffer(), mem(), key(0) {
     index = 0;
     pc = 0x200;
-    key = 0;
     sp = 0;
     dt = 0;
     st = 0;
@@ -66,19 +65,21 @@ void chip8::handleEvents() {
             break;
         case SDL_KEYDOWN:
             if(event.key.keysym.sym >= SDLK_0 && event.key.keysym.sym <= SDLK_9)
-                key |= 1 << (event.key.keysym.sym - SDLK_0);
+                key[event.key.keysym.sym - SDLK_0] = true;
             else if(event.key.keysym.sym >= SDLK_a && event.key.keysym.sym <= SDLK_f)
-                key |= 1 << (event.key.keysym.sym - SDLK_a + 10);
+                key[event.key.keysym.sym - SDLK_a + 10] = true;
             break;
         case SDL_KEYUP:
             if(event.key.keysym.sym >= SDLK_0 && event.key.keysym.sym <= SDLK_9)
-                key &= ~(1 << (event.key.keysym.sym - SDLK_0));
+                key[event.key.keysym.sym - SDLK_0] = false;
             else if(event.key.keysym.sym >= SDLK_a && event.key.keysym.sym <= SDLK_f)
-                key &= ~(1 << (event.key.keysym.sym - SDLK_a + 10));
+                key[event.key.keysym.sym - SDLK_a + 10] = false;
             break;
         default:
             break;
     }
+
+    SDL_SetWindowTitle(window, key.to_string().c_str());
 
 
 }
@@ -86,6 +87,8 @@ void chip8::handleEvents() {
 void chip8::update() {
     uint16_t opcode = (mem[pc] << 8) | mem[pc + 1];
     pc += 2;
+    uint8_t& Vx = V[(opcode & 0x0F00) >> 8];
+    uint8_t& Vy = V[(opcode & 0x00F0) >> 4];
     switch(opcode & 0xF000) {
         case 0x0000:
             if(opcode == 0x00E0) {
@@ -112,59 +115,59 @@ void chip8::update() {
             pc = opcode & 0x0FFF;
             break;
         case 0x3000:
-            if(V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))
+            if(Vx == (opcode & 0x00FF))
                 pc += 2;
             break;
         case 0x4000:
-            if(V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF))
+            if(Vx != (opcode & 0x00FF))
                 pc += 2;
             break;
         case 0x5000:
             if(opcode & 0x000F)
                 invalid_opcode(opcode);
-            if(V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4])
+            if(Vx == Vy)
                 pc += 2;
             break;
         case 0x6000:
-            V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
+            Vx = opcode & 0x00FF;
             break;
         case 0x7000:
-            V[(opcode & 0x0F00) >> 8] += opcode & 0x00FF;
+            Vx += opcode & 0x00FF;
             break;
         case 0x8000:
             switch(opcode & 0x000F) {
                 case 0x0000:
-                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4];
+                    Vx = Vy;
                     break;
                 case 0x0001:
-                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] | V[(opcode & 0x00F0) >> 4];
+                    Vx = Vx | Vy;
                     break;
                 case 0x0002:
-                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] & V[(opcode & 0x00F0) >> 4];
+                    Vx = Vx & Vy;
                     break;
                 case 0x0003:
-                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] ^ V[(opcode & 0x00F0) >> 4];
+                    Vx = Vx ^ Vy;
                     break;
                 case 0x0004:
-                    if(V[(opcode & 0x0F00) >> 8] + V[(opcode & 0x00F0) >> 4] > 255)
+                    if(Vx + Vy > 255)
                         V[0xF] = 1;
-                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] + V[(opcode & 0x00F0) >> 4];
+                    Vx = Vx + Vy;
                     break;
                 case 0x0005:
-                    V[0xF] = (V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4]) ? 1 : 0;
-                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] - V[(opcode & 0x00F0) >> 4];
+                    V[0xF] = (Vx > Vy) ? 1 : 0;
+                    Vx = Vx - Vy;
                     break;
                 case 0x0006:
-                    V[0xF] = V[(opcode & 0x0F00) >> 8] & 0b00000001;
-                    V[(opcode & 0x0F00) >> 8] >>= 1;
+                    V[0xF] = Vx & 0b00000001;
+                    Vx >>= 1;
                     break;
                 case 0x0007:
-                    V[0xF] = (V[(opcode & 0x00F0) >> 4] > V[(opcode & 0x0F00) >> 8]) ? 1 : 0;
-                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] - V[(opcode & 0x0F00) >> 8];
+                    V[0xF] = (Vy > Vx) ? 1 : 0;
+                    Vx = Vy - Vx;
                     break;
                 case 0x000E:
-                    V[0xF] = V[(opcode & 0x0F00) >> 8] & 0b10000000;
-                    V[(opcode & 0x0F00) >> 8] <<= 1;
+                    V[0xF] = Vx & 0b10000000;
+                    Vx <<= 1;
                     break;
                 default:
                     invalid_opcode(opcode);
@@ -173,7 +176,7 @@ void chip8::update() {
         case 0x9000:
             if(opcode & 0x000F)
                 invalid_opcode(opcode);
-            if(V[(opcode & 0x0F00) >> 8] != V[(opcode & 0x0F00) >> 8])
+            if(Vx != Vy)
                 pc += 2;
             break;
         case 0xA000:
@@ -183,16 +186,16 @@ void chip8::update() {
             pc = V[0] + (opcode & 0x0FFF);
             break;
         case 0xC000:
-            V[(opcode & 0x0F00) >> 8] = rand(rng) & (opcode & 0x00FF);
+            Vx = rand(rng) & (opcode & 0x00FF);
             break;
         case 0xD000: {
-            const int x = V[(opcode & 0x0F00) >> 8] & 0b00111111;
-            const int y = V[(opcode & 0x00F0) >> 4] & 0b00011111;
+            const int x = Vx & 0b00111111;
+            const int y = Vy & 0b00011111;
             const int n = opcode & 0x000F;
             V[0xF] = 0;
             for(int i = 0; i < n && (i + y) < 32; i++) {
                 uint64_t mask;
-                if(56 - x > 0)
+                if(x < 56)
                     mask = ((uint64_t) mem[i + index]) << (56ULL - x);
                 else
                     mask = ((uint64_t) mem[i + index]) >> (x - 56ULL);
@@ -203,38 +206,38 @@ void chip8::update() {
             break;
         }
         case 0xE000:
-            if((V[(opcode & 0x0F00) >> 8] > 0x000F) || ((opcode & 0x00FF) != 0x009E && (opcode & 0x00FF) != 0x00A1))
+            if((Vx > 0x000F))
                 invalid_opcode(opcode);
-            if((opcode & 0x00FF) == 0x009E && (key & (1 << V[(opcode & 0x0F00) >> 8])))
+            if((opcode & 0x00FF) == 0x009E && key[Vx])
                 pc += 2;
-            else if(!(key & (1 << V[(opcode & 0x0F00) >> 8])))
+            else if((opcode & 0x00FF) == 0x00A1 && !key[Vx])
                 pc += 2;
             break;
         case 0xF000:
             switch (opcode & 0x00FF) {
                 case 0x0007:
-                    V[(opcode & 0x0F00) >> 8] = dt;
+                    Vx = dt;
                     break;
                 case 0x0015:
-                    dt = V[(opcode & 0x0F00) >> 8];
+                    dt = Vx;
                     break;
                 case 0x0018:
-                    st = V[(opcode & 0x0F00) >> 8];
+                    st = Vx;
                     break;
                 case 0x001E:
-                    if(index + V[(opcode & 0x0F00) >> 8] > 0x0FFF)
+                    if(index + Vx > 0x0FFF)
                         V[0xF] = 1;
-                    index += V[(opcode & 0x0F00) >> 8];
+                    index += Vx;
                     break;
                 case 0x000A:
-                    if(!(key & (1 << V[(opcode & 0x0F00) >> 8])))
+                    if(!key[Vx])
                         pc -= 2;
                     break;
                 case 0x0029:
-                    index = 0x050 + (5 * (V[(opcode & 0x0F00) >> 8] & 0x000F));
+                    index = 0x050 + (5 * (Vx & 0x000F));
                     break;
                 case 0x0033: {
-                    uint8_t num = V[(opcode & 0x0F00) >> 8];
+                    uint8_t num = Vx;
                     mem[index + 2] = num % 10;
                     num /= 10;
                     mem[index + 1] = num % 10;
