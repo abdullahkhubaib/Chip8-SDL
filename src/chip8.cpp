@@ -26,8 +26,7 @@ chip8::chip8(const std::string& fName) : reg(), stack(), frame_buffer(), mem() {
     window = SDL_CreateWindow(("Chip 8 - " + fName).c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                               64 * SCALE_RATIO, 32 * SCALE_RATIO, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, 0);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-
+    SDL_RenderSetScale(renderer, SCALE_RATIO, SCALE_RATIO);
     running = true;
 }
 
@@ -59,11 +58,19 @@ void chip8::handleEvents() {
 }
 
 void chip8::update() {
-
 }
 
 void chip8::render() {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    for(int y = 0; y < 32; y++) {
+        for(int x = 0; x < 64; x++) {
+            SDL_Rect rect = {x, y, 1, 1};
+            if(frame_buffer[y] & (1ULL << (63ULL - x)))
+                SDL_RenderFillRect(renderer, &rect);
+        }
+    }
     SDL_RenderPresent(renderer);
 }
 
