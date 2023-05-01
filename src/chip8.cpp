@@ -30,8 +30,13 @@ chip8::chip8(const std::string& fName) : reg(), stack(), prev_frame(), frame_buf
     SDL_RenderSetScale(renderer, SCALE_RATIO, SCALE_RATIO);
     running = true;
 
+    // Load character sprites into memory.
     for(int i = 0; i < 80; i++)
         mem[0x50 + i] = characters[i / 5][i % 5];
+
+    // Initialize the RNG.
+    rng = std::mt19937(std::random_device()());
+    rand = std::uniform_int_distribution<std::mt19937::result_type>(0, 255);
 
 }
 
@@ -80,6 +85,7 @@ void chip8::handleEvents() {
 
 void chip8::update() {
     uint16_t opcode = (mem[pc] << 8) | mem[pc + 1];
+    pc += 2;
     switch(opcode & 0xF000) {
         case 0x0000:
             if(opcode == 0x00E0) {
@@ -96,19 +102,46 @@ void chip8::update() {
         case 0x2000:
             break;
         case 0x3000:
+            if(reg[opcode & 0x0F00] == (opcode & 0x00FF))
+                pc += 2;
             break;
         case 0x4000:
+            if(reg[opcode & 0x0F00] != (opcode & 0x00FF))
+                pc += 2;
             break;
         case 0x5000:
+            if(opcode & 0x000F)
+                invalid_opcode(opcode);
+            if(reg[opcode & 0x0F00] == reg[opcode & 0x00F0])
+                pc += 2;
             break;
         case 0x6000:
+            reg[opcode & 0x0F00] = opcode & 0x00FF;
             break;
         case 0x7000:
+            reg[opcode & 0x0F00] += opcode & 0x00FF;
+            break;
+        case 0x8000:
+            break;
+        case 0x9000:
+            if(opcode & 0x000F)
+                invalid_opcode(opcode);
+            if(reg[opcode & 0x0F00] != reg[opcode & 0x00F0])
+                pc += 2;
+            break;
+        case 0xA000:
+            index = opcode & 0x0FFF;
+            break;
+        case 0xB000:
+            pc = reg[0] + (opcode & 0x0FFF);
+            break;
+        case 0xC000:
+            reg[opcode & 0x0F00] = rand(rng) & (opcode & 0x00FF);
             break;
         default:
             invalid_opcode(opcode);
     }
-        pc += 2;
+
 }
 
 void chip8::render() {

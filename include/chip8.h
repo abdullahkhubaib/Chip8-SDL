@@ -5,6 +5,7 @@
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include "SDL.h"
 #define SCALE_RATIO 16
 
@@ -27,6 +28,9 @@ private:
     void clear_buffer();
     void set_pixel(int x, int y);
     void invalid_opcode(uint16_t opcode);
+
+    std::mt19937 rng;
+    std::uniform_int_distribution<std::mt19937::result_type> rand;
 
 public:
     bool running;
