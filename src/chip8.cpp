@@ -1,11 +1,11 @@
 #include <string>
 #include "../include/chip8.h"
 
-chip8::chip8(const std::string& fName) : reg(), stack(), prev_frame(), frame_buffer(), mem() {
+chip8::chip8(const std::string& fName) : V(), stack(), prev_frame(), frame_buffer(), mem() {
     index = 0;
     pc = 0x200;
     key = 0;
-    sp = -1;
+    sp = 0;
     dt = 0;
     st = 0;
     running = false;
@@ -96,7 +96,7 @@ void chip8::update() {
                     std::cout << "Illegal return at PC: " << pc << std::endl;
                     exit(1);
                 }
-                pc = stack[sp--];
+                pc = stack[--sp];
             } else
                 invalid_opcode(opcode);
             break;
@@ -108,63 +108,63 @@ void chip8::update() {
                 std::cout << "Stack Overflow at PC: " << pc << std::endl;
                 exit(1);
             }
-            stack[++sp] = pc;
+            stack[sp++] = pc;
             pc = opcode & 0x0FFF;
             break;
         case 0x3000:
-            if(reg[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))
+            if(V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))
                 pc += 2;
             break;
         case 0x4000:
-            if(reg[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF))
+            if(V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF))
                 pc += 2;
             break;
         case 0x5000:
             if(opcode & 0x000F)
                 invalid_opcode(opcode);
-            if(reg[(opcode & 0x0F00) >> 8] == reg[(opcode & 0x00F0) >> 4])
+            if(V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4])
                 pc += 2;
             break;
         case 0x6000:
-            reg[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
+            V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
             break;
         case 0x7000:
-            reg[(opcode & 0x0F00) >> 8] += opcode & 0x00FF;
+            V[(opcode & 0x0F00) >> 8] += opcode & 0x00FF;
             break;
         case 0x8000:
             switch(opcode & 0x000F) {
                 case 0x0000:
-                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x00F0) >> 4];
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4];
                     break;
                 case 0x0001:
-                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] | reg[(opcode & 0x00F0) >> 4];
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] | V[(opcode & 0x00F0) >> 4];
                     break;
                 case 0x0002:
-                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] & reg[(opcode & 0x00F0) >> 4];
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] & V[(opcode & 0x00F0) >> 4];
                     break;
                 case 0x0003:
-                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] ^ reg[(opcode & 0x00F0) >> 4];
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] ^ V[(opcode & 0x00F0) >> 4];
                     break;
                 case 0x0004:
-                    if(reg[(opcode & 0x0F00) >> 8] + reg[(opcode & 0x00F0) >> 4] > 255)
-                        reg[0xF] = 1;
-                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] + reg[(opcode & 0x00F0) >> 4];
+                    if(V[(opcode & 0x0F00) >> 8] + V[(opcode & 0x00F0) >> 4] > 255)
+                        V[0xF] = 1;
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] + V[(opcode & 0x00F0) >> 4];
                     break;
                 case 0x0005:
-                    reg[0xF] = (reg[(opcode & 0x0F00) >> 8] > reg[(opcode & 0x00F0) >> 4]) ? 1 : 0;
-                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] - reg[(opcode & 0x00F0) >> 4];
+                    V[0xF] = (V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4]) ? 1 : 0;
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] - V[(opcode & 0x00F0) >> 4];
                     break;
                 case 0x0006:
-                    reg[0xF] = reg[(opcode & 0x0F00) >> 8] & 0b00000001;
-                    reg[(opcode & 0x0F00) >> 8] >>= 1;
+                    V[0xF] = V[(opcode & 0x0F00) >> 8] & 0b00000001;
+                    V[(opcode & 0x0F00) >> 8] >>= 1;
                     break;
                 case 0x0007:
-                    reg[0xF] = (reg[(opcode & 0x00F0) >> 4] > reg[(opcode & 0x0F00) >> 8]) ? 1 : 0;
-                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x00F0) >> 4] - reg[(opcode & 0x0F00) >> 8];
+                    V[0xF] = (V[(opcode & 0x00F0) >> 4] > V[(opcode & 0x0F00) >> 8]) ? 1 : 0;
+                    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] - V[(opcode & 0x0F00) >> 8];
                     break;
                 case 0x000E:
-                    reg[0xF] = reg[(opcode & 0x0F00) >> 8] & 0b10000000;
-                    reg[(opcode & 0x0F00) >> 8] <<= 1;
+                    V[0xF] = V[(opcode & 0x0F00) >> 8] & 0b10000000;
+                    V[(opcode & 0x0F00) >> 8] <<= 1;
                     break;
                 default:
                     invalid_opcode(opcode);
@@ -173,53 +173,64 @@ void chip8::update() {
         case 0x9000:
             if(opcode & 0x000F)
                 invalid_opcode(opcode);
-            if(reg[(opcode & 0x0F00) >> 8] != reg[(opcode & 0x0F00) >> 8])
+            if(V[(opcode & 0x0F00) >> 8] != V[(opcode & 0x0F00) >> 8])
                 pc += 2;
             break;
         case 0xA000:
             index = opcode & 0x0FFF;
             break;
         case 0xB000:
-            pc = reg[0] + (opcode & 0x0FFF);
+            pc = V[0] + (opcode & 0x0FFF);
             break;
         case 0xC000:
-            reg[(opcode & 0x0F00) >> 8] = rand(rng) & (opcode & 0x00FF);
+            V[(opcode & 0x0F00) >> 8] = rand(rng) & (opcode & 0x00FF);
             break;
-        case 0xD000:
+        case 0xD000: {
+            const int x = V[(opcode & 0x0F00) >> 8] & 0b00111111;
+            const int y = V[(opcode & 0x00F0) >> 4] & 0b00011111;
+            const int n = opcode & 0x000F;
+            V[0xF] = 0;
+            for(int i = 0; i < n; i++) {
+                uint64_t mask = ((uint64_t) mem[i + index]) << (63ULL - x);
+                frame_buffer[y + i] ^= mask;
+                V[0xF] = ((frame_buffer[y + i] & mask) == mask) ? 1 : 0;
+            }
+
             break;
+        }
         case 0xE000:
-            if((reg[(opcode & 0x0F00) >> 8] > 0x000F) || ((opcode & 0x00FF) != 0x009E && (opcode & 0x00FF) != 0x00A1))
+            if((V[(opcode & 0x0F00) >> 8] > 0x000F) || ((opcode & 0x00FF) != 0x009E && (opcode & 0x00FF) != 0x00A1))
                 invalid_opcode(opcode);
-            if((opcode & 0x00FF) == 0x009E && (key & (1 << reg[(opcode & 0x0F00) >> 8])))
+            if((opcode & 0x00FF) == 0x009E && (key & (1 << V[(opcode & 0x0F00) >> 8])))
                 pc += 2;
-            else if(!(key & (1 << reg[(opcode & 0x0F00) >> 8])))
+            else if(!(key & (1 << V[(opcode & 0x0F00) >> 8])))
                 pc += 2;
             break;
         case 0xF000:
             switch (opcode & 0x00FF) {
                 case 0x0007:
-                    reg[(opcode & 0x0F00) >> 8] = dt;
+                    V[(opcode & 0x0F00) >> 8] = dt;
                     break;
                 case 0x0015:
-                    dt = reg[(opcode & 0x0F00) >> 8];
+                    dt = V[(opcode & 0x0F00) >> 8];
                     break;
                 case 0x0018:
-                    st = reg[(opcode & 0x0F00) >> 8];
+                    st = V[(opcode & 0x0F00) >> 8];
                     break;
                 case 0x001E:
-                    if(index + reg[(opcode & 0x0F00) >> 8] > 0x0FFF)
-                        reg[0xF] = 1;
-                    index += reg[(opcode & 0x0F00) >> 8];
+                    if(index + V[(opcode & 0x0F00) >> 8] > 0x0FFF)
+                        V[0xF] = 1;
+                    index += V[(opcode & 0x0F00) >> 8];
                     break;
                 case 0x000A:
-                    if(!(key & (1 << reg[(opcode & 0x0F00) >> 8])))
+                    if(!(key & (1 << V[(opcode & 0x0F00) >> 8])))
                         pc -= 2;
                     break;
                 case 0x0029:
-                    index = 0x050 + (5 * (reg[(opcode & 0x0F00) >> 8] & 0x000F));
+                    index = 0x050 + (5 * (V[(opcode & 0x0F00) >> 8] & 0x000F));
                     break;
                 case 0x0033: {
-                    uint8_t num = reg[(opcode & 0x0F00) >> 8];
+                    uint8_t num = V[(opcode & 0x0F00) >> 8];
                     mem[index + 2] = num % 10;
                     num /= 10;
                     mem[index + 1] = num % 10;
@@ -229,11 +240,11 @@ void chip8::update() {
                 }
                 case 0x0055:
                     for(int i = 0, k = (opcode & 0x0F00) >> 8; i <= k; i++)
-                        mem[index + i] = reg[i];
+                        mem[index + i] = V[i];
                     break;
                 case 0x0065:
                     for(int i = 0, k = (opcode & 0x0F00) >> 8; i <= k; i++)
-                        reg[i] = mem[index + i];
+                        V[i] = mem[index + i];
                     break;
                 default:
                     invalid_opcode(opcode);
@@ -242,7 +253,7 @@ void chip8::update() {
         default:
             invalid_opcode(opcode);
     }
-
+    asm("nop");
 }
 
 void chip8::render() {
@@ -267,8 +278,15 @@ void chip8::clear_buffer() {
         frame_buffer[i] = 0;
 }
 
-void chip8::set_pixel(int x, int y) {
-    frame_buffer[y] |= 1ULL << (63ULL - x);
+void chip8::set_pixel(int x, int y, bool b) {
+    if(b)
+        frame_buffer[y] |= 1ULL << (63ULL - x);
+    else
+        frame_buffer[y] &= ~(1ULL << (63ULL - x));
+}
+
+void chip8::toggle_pixel(int x, int y) {
+    frame_buffer[y] ^= 1ULL << (63ULL - x);
 }
 
 void chip8::invalid_opcode(uint16_t opcode) {
