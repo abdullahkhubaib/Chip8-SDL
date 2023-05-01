@@ -3,6 +3,8 @@
 #define CHIP8_CHIP8_H
 #include <cstdint>
 #include <array>
+#include <fstream>
+#include <iostream>
 #include "SDL.h"
 #define SCALE_RATIO 16
 
