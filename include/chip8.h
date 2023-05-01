@@ -11,18 +11,21 @@
 class chip8 {
 private:
     std::array<uint8_t, 16> reg;
-    uint16_t index;
-    uint16_t pc;
     std::array<uint8_t, 64> stack;
-    uint8_t sp;
-    uint8_t dt;
-    uint8_t st;
     std::array<uint64_t, 32> frame_buffer;
     std::array<uint8_t, 4096> mem;
     static const uint8_t characters[16][5];
-
+    uint16_t index;
+    uint16_t pc;
+    uint16_t key;
+    uint8_t sp;
+    uint8_t dt;
+    uint8_t st;
     SDL_Window* window;
     SDL_Renderer* renderer;
+    void clear_buffer();
+    void set_pixel(int x, int y);
+
 public:
     bool running;
     chip8(const std::string& fName);

@@ -49,12 +49,28 @@ const uint8_t chip8::characters[16][5] = {{0xF0, 0x90, 0x90, 0x90, 0xF0}, {0x20,
 void chip8::handleEvents() {
     SDL_Event event;
     SDL_PollEvent(&event);
-    switch(event.type) {
+
+    switch (event.type) {
         case SDL_QUIT:
             running = false;
+            break;
+        case SDL_KEYDOWN:
+            if(event.key.keysym.sym >= SDLK_0 && event.key.keysym.sym <= SDLK_9)
+                key |= 1 << (event.key.keysym.sym - SDLK_0);
+            else if(event.key.keysym.sym >= SDLK_a && event.key.keysym.sym <= SDLK_f)
+                key |= 1 << (event.key.keysym.sym - SDLK_a + 10);
+            break;
+        case SDL_KEYUP:
+            if(event.key.keysym.sym >= SDLK_0 && event.key.keysym.sym <= SDLK_9)
+                key &= ~(1 << (event.key.keysym.sym - SDLK_0));
+            else if(event.key.keysym.sym >= SDLK_a && event.key.keysym.sym <= SDLK_f)
+                key &= ~(1 << (event.key.keysym.sym - SDLK_a + 10));
+            break;
         default:
             break;
     }
+
+
 }
 
 void chip8::update() {
@@ -72,6 +88,15 @@ void chip8::render() {
         }
     }
     SDL_RenderPresent(renderer);
+}
+
+void chip8::clear_buffer() {
+    for(int i = 0; i < 32; i++)
+        frame_buffer[i] = 0;
+}
+
+void chip8::set_pixel(int x, int y) {
+    frame_buffer[y] |= 1ULL << (63ULL - x);
 }
 
 
