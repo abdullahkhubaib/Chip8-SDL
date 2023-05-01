@@ -30,7 +30,7 @@ private:
     void clear_buffer();
     void set_pixel(int x, int y, bool b);
     void toggle_pixel(int x, int y);
-    void invalid_opcode(uint16_t opcode);
+    static void invalid_opcode(uint16_t opcode);
 
     std::mt19937 rng;
     std::uniform_int_distribution<std::mt19937::result_type> rand;

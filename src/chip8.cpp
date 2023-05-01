@@ -85,7 +85,7 @@ void chip8::handleEvents() {
 }
 
 void chip8::update() {
-    uint16_t opcode = (mem[pc] << 8) | mem[pc + 1];
+    const uint16_t opcode = (mem[pc] << 8) | mem[pc + 1];
     pc += 2;
     uint8_t& Vx = V[(opcode & 0x0F00) >> 8];
     uint8_t& Vy = V[(opcode & 0x00F0) >> 4];
@@ -206,11 +206,9 @@ void chip8::update() {
             break;
         }
         case 0xE000:
-            if((Vx > 0x000F))
+            if((Vx > 0x000F) || ((opcode & 0x00FF) != 0x009E && (opcode & 0x00FF) != 0x00A1))
                 invalid_opcode(opcode);
-            if((opcode & 0x00FF) == 0x009E && key[Vx])
-                pc += 2;
-            else if((opcode & 0x00FF) == 0x00A1 && !key[Vx])
+            if(((opcode & 0x00FF) == 0x009E && key[Vx]) || ((opcode & 0x00FF) == 0x00A1 && !key[Vx]))
                 pc += 2;
             break;
         case 0xF000:
@@ -230,8 +228,14 @@ void chip8::update() {
                     index += Vx;
                     break;
                 case 0x000A:
-                    if(!key[Vx])
+                    if(key.none())
                         pc -= 2;
+                    else for(int i = 0; i < 16; i++) {
+                        if(key[i]) {
+                            Vx = i;
+                            break;
+                        }
+                    }
                     break;
                 case 0x0029:
                     index = 0x050 + (5 * (Vx & 0x000F));
