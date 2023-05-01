@@ -102,31 +102,68 @@ void chip8::update() {
         case 0x2000:
             break;
         case 0x3000:
-            if(reg[(opcode & 0x0F00) >> 2] == (opcode & 0x00FF))
+            if(reg[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))
                 pc += 2;
             break;
         case 0x4000:
-            if(reg[(opcode & 0x0F00) >> 2] != (opcode & 0x00FF))
+            if(reg[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF))
                 pc += 2;
             break;
         case 0x5000:
             if(opcode & 0x000F)
                 invalid_opcode(opcode);
-            if(reg[(opcode & 0x0F00) >> 2] == reg[(opcode & 0x0F00) >> 2])
+            if(reg[(opcode & 0x0F00) >> 8] == reg[(opcode & 0x00F0) >> 4])
                 pc += 2;
             break;
         case 0x6000:
-            reg[(opcode & 0x0F00) >> 2] = opcode & 0x00FF;
+            reg[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
             break;
         case 0x7000:
-            reg[(opcode & 0x0F00) >> 2] += opcode & 0x00FF;
+            reg[(opcode & 0x0F00) >> 8] += opcode & 0x00FF;
             break;
         case 0x8000:
+            switch(opcode & 0x000F) {
+                case 0x0000:
+                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x00F0) >> 4];
+                    break;
+                case 0x0001:
+                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] | reg[(opcode & 0x00F0) >> 4];
+                    break;
+                case 0x0002:
+                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] & reg[(opcode & 0x00F0) >> 4];
+                    break;
+                case 0x0003:
+                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] ^ reg[(opcode & 0x00F0) >> 4];
+                    break;
+                case 0x0004:
+                    if(reg[(opcode & 0x0F00) >> 8] + reg[(opcode & 0x00F0) >> 4] > 255)
+                        reg[0xF] = 1;
+                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] + reg[(opcode & 0x00F0) >> 4];
+                    break;
+                case 0x0005:
+                    reg[0xF] = (reg[(opcode & 0x0F00) >> 8] > reg[(opcode & 0x00F0) >> 4]) ? 1 : 0;
+                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x0F00) >> 8] - reg[(opcode & 0x00F0) >> 4];
+                    break;
+                case 0x0006:
+                    reg[0xF] = reg[(opcode & 0x0F00) >> 8] & 0b00000001;
+                    reg[(opcode & 0x0F00) >> 8] >>= 1;
+                    break;
+                case 0x0007:
+                    reg[0xF] = (reg[(opcode & 0x00F0) >> 4] > reg[(opcode & 0x0F00) >> 8]) ? 1 : 0;
+                    reg[(opcode & 0x0F00) >> 8] = reg[(opcode & 0x00F0) >> 4] - reg[(opcode & 0x0F00) >> 8];
+                    break;
+                case 0x000E:
+                    reg[0xF] = reg[(opcode & 0x0F00) >> 8] & 0b10000000;
+                    reg[(opcode & 0x0F00) >> 8] <<= 1;
+                    break;
+                default:
+                    invalid_opcode(opcode);
+            }
             break;
         case 0x9000:
             if(opcode & 0x000F)
                 invalid_opcode(opcode);
-            if(reg[(opcode & 0x0F00) >> 2] != reg[(opcode & 0x0F00) >> 2])
+            if(reg[(opcode & 0x0F00) >> 8] != reg[(opcode & 0x0F00) >> 8])
                 pc += 2;
             break;
         case 0xA000:
@@ -136,16 +173,16 @@ void chip8::update() {
             pc = reg[0] + (opcode & 0x0FFF);
             break;
         case 0xC000:
-            reg[(opcode & 0x0F00) >> 2] = rand(rng) & (opcode & 0x00FF);
+            reg[(opcode & 0x0F00) >> 8] = rand(rng) & (opcode & 0x00FF);
             break;
         case 0xD000:
             break;
         case 0xE000:
-            if((reg[(opcode & 0x0F00) >> 2] > 0x000F) || ((opcode & 0x00FF) != 0x009E && (opcode & 0x00FF) != 0x00A1))
+            if((reg[(opcode & 0x0F00) >> 8] > 0x000F) || ((opcode & 0x00FF) != 0x009E && (opcode & 0x00FF) != 0x00A1))
                 invalid_opcode(opcode);
-            if((opcode & 0x00FF) == 0x009E && (key & (1 << reg[(opcode & 0x0F00) >> 2])))
+            if((opcode & 0x00FF) == 0x009E && (key & (1 << reg[(opcode & 0x0F00) >> 8])))
                 pc += 2;
-            else if(!(key & (1 << reg[(opcode & 0x0F00) >> 2])))
+            else if(!(key & (1 << reg[(opcode & 0x0F00) >> 8])))
                 pc += 2;
             break;
         default:
