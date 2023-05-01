@@ -102,31 +102,31 @@ void chip8::update() {
         case 0x2000:
             break;
         case 0x3000:
-            if(reg[opcode & 0x0F00] == (opcode & 0x00FF))
+            if(reg[(opcode & 0x0F00) >> 2] == (opcode & 0x00FF))
                 pc += 2;
             break;
         case 0x4000:
-            if(reg[opcode & 0x0F00] != (opcode & 0x00FF))
+            if(reg[(opcode & 0x0F00) >> 2] != (opcode & 0x00FF))
                 pc += 2;
             break;
         case 0x5000:
             if(opcode & 0x000F)
                 invalid_opcode(opcode);
-            if(reg[opcode & 0x0F00] == reg[opcode & 0x00F0])
+            if(reg[(opcode & 0x0F00) >> 2] == reg[(opcode & 0x0F00) >> 2])
                 pc += 2;
             break;
         case 0x6000:
-            reg[opcode & 0x0F00] = opcode & 0x00FF;
+            reg[(opcode & 0x0F00) >> 2] = opcode & 0x00FF;
             break;
         case 0x7000:
-            reg[opcode & 0x0F00] += opcode & 0x00FF;
+            reg[(opcode & 0x0F00) >> 2] += opcode & 0x00FF;
             break;
         case 0x8000:
             break;
         case 0x9000:
             if(opcode & 0x000F)
                 invalid_opcode(opcode);
-            if(reg[opcode & 0x0F00] != reg[opcode & 0x00F0])
+            if(reg[(opcode & 0x0F00) >> 2] != reg[(opcode & 0x0F00) >> 2])
                 pc += 2;
             break;
         case 0xA000:
@@ -136,7 +136,17 @@ void chip8::update() {
             pc = reg[0] + (opcode & 0x0FFF);
             break;
         case 0xC000:
-            reg[opcode & 0x0F00] = rand(rng) & (opcode & 0x00FF);
+            reg[(opcode & 0x0F00) >> 2] = rand(rng) & (opcode & 0x00FF);
+            break;
+        case 0xD000:
+            break;
+        case 0xE000:
+            if((reg[(opcode & 0x0F00) >> 2] > 0x000F) || ((opcode & 0x00FF) != 0x009E && (opcode & 0x00FF) != 0x00A1))
+                invalid_opcode(opcode);
+            if((opcode & 0x00FF) == 0x009E && (key & (1 << reg[(opcode & 0x0F00) >> 2])))
+                pc += 2;
+            else if(!(key & (1 << reg[(opcode & 0x0F00) >> 2])))
+                pc += 2;
             break;
         default:
             invalid_opcode(opcode);
