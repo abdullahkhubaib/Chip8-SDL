@@ -20,13 +20,16 @@ private:
     std::array<uint64_t, 32> frame_buffer;
     std::array<uint8_t, 4096> mem;
     static const uint8_t characters[16][5];
-    bool running;
+
     SDL_Window* window;
     SDL_Renderer* renderer;
 public:
-    chip8();
+    bool running;
+    chip8(const std::string& fName);
     ~chip8();
-    void init(const std::string& fName);
+    void handleEvents();
+    void update();
+    void render();
 };
 
 
