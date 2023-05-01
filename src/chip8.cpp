@@ -1,9 +1,10 @@
 #include <string>
 #include "../include/chip8.h"
 
-chip8::chip8(const std::string& fName) : reg(), stack(), frame_buffer(), mem() {
+chip8::chip8(const std::string& fName) : reg(), stack(), prev_frame(), frame_buffer(), mem() {
     index = 0;
-    pc = 0;
+    pc = 0x200;
+    key = 0;
     sp = 0;
     dt = 0;
     st = 0;
@@ -28,6 +29,10 @@ chip8::chip8(const std::string& fName) : reg(), stack(), frame_buffer(), mem() {
     renderer = SDL_CreateRenderer(window, -1, 0);
     SDL_RenderSetScale(renderer, SCALE_RATIO, SCALE_RATIO);
     running = true;
+
+    for(int i = 0; i < 80; i++)
+        mem[0x50 + i] = characters[i / 5][i % 5];
+
 }
 
 chip8::~chip8() {
@@ -74,9 +79,42 @@ void chip8::handleEvents() {
 }
 
 void chip8::update() {
+    uint16_t opcode = (mem[pc] << 8) | mem[pc + 1];
+    switch(opcode & 0xF000) {
+        case 0x0000:
+            if(opcode == 0x00E0) {
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                SDL_RenderClear(renderer);
+            } else if(opcode == 0x00EE) {
+
+            } else
+                invalid_opcode(opcode);
+            break;
+        case 0x1000:
+            pc = opcode & 0x0FFF;
+            break;
+        case 0x2000:
+            break;
+        case 0x3000:
+            break;
+        case 0x4000:
+            break;
+        case 0x5000:
+            break;
+        case 0x6000:
+            break;
+        case 0x7000:
+            break;
+        default:
+            invalid_opcode(opcode);
+    }
+        pc += 2;
 }
 
 void chip8::render() {
+    if(prev_frame == frame_buffer)
+        return;
+    prev_frame = frame_buffer;
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -97,6 +135,11 @@ void chip8::clear_buffer() {
 
 void chip8::set_pixel(int x, int y) {
     frame_buffer[y] |= 1ULL << (63ULL - x);
+}
+
+void chip8::invalid_opcode(uint16_t opcode) {
+    std::cerr << "Invalid opcode " << opcode << std::endl;
+    exit(1);
 }
 
 

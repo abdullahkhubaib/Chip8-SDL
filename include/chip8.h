@@ -12,6 +12,7 @@ class chip8 {
 private:
     std::array<uint8_t, 16> reg;
     std::array<uint8_t, 64> stack;
+    std::array<uint64_t, 32> prev_frame;
     std::array<uint64_t, 32> frame_buffer;
     std::array<uint8_t, 4096> mem;
     static const uint8_t characters[16][5];
@@ -25,6 +26,7 @@ private:
     SDL_Renderer* renderer;
     void clear_buffer();
     void set_pixel(int x, int y);
+    void invalid_opcode(uint16_t opcode);
 
 public:
     bool running;
