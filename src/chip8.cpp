@@ -218,11 +218,22 @@ void chip8::update() {
                 case 0x0029:
                     index = 0x050 + (5 * (reg[(opcode & 0x0F00) >> 8] & 0x000F));
                     break;
-                case 0x0033:
+                case 0x0033: {
+                    uint8_t num = reg[(opcode & 0x0F00) >> 8];
+                    mem[index + 2] = num % 10;
+                    num /= 10;
+                    mem[index + 1] = num % 10;
+                    num /= 10;
+                    mem[index] = num;
                     break;
+                }
                 case 0x0055:
+                    for(int i = 0, k = (opcode & 0x0F00) >> 8; i <= k; i++)
+                        mem[index + i] = reg[i];
                     break;
                 case 0x0065:
+                    for(int i = 0, k = (opcode & 0x0F00) >> 8; i <= k; i++)
+                        reg[i] = mem[index + i];
                     break;
                 default:
                     invalid_opcode(opcode);
