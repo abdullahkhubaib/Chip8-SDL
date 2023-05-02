@@ -207,16 +207,16 @@ void chip8::update() {
             Vx = rand(rng) & (opcode & 0x00FF);
             break;
         case 0xD000: {
-            const int x = Vx & 0b00111111;
-            const int y = Vy & 0b00011111;
+            const int x = Vx & 0b00111111; // Vx % 64
+            const int y = Vy & 0b00011111; // Vy % 32
             const int n = opcode & 0x000F;
             V[0xF] = 0;
             for(int i = 0; i < n && (i + y) < 32; i++) {
-                uint64_t mask;
+                uint64_t mask = mem[i + index];
                 if(x < 56)
-                    mask = ((uint64_t) mem[i + index]) << (56ULL - x);
+                    mask <<= 56ULL - x;
                 else
-                    mask = ((uint64_t) mem[i + index]) >> (x - 56ULL);
+                    mask >>= x - 56ULL;
                 frame_buffer[y + i] ^= mask;
                 V[0xF] = ((frame_buffer[y + i] & mask) == mask) ? 1 : 0;
             }
