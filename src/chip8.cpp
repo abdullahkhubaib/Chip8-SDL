@@ -37,9 +37,26 @@ chip8::chip8(const std::string& fName) : V(), stack(), prev_frame(), frame_buffe
     rng = std::mt19937(std::random_device()());
     rand = std::uniform_int_distribution<std::mt19937::result_type>(0, 255);
 
+    t_thread = std::thread([this]() {
+        while(true) {
+            t_mutex.lock();
+            if(dt > 0)
+                dt--;
+            if(st > 0) {
+                st--;
+                if(st == 0)
+                    Beep(523, 100);
+            }
+            t_mutex.unlock();
+            std::this_thread::sleep_for(std::chrono::nanoseconds(16666666));
+        }
+    });
+
+
 }
 
 chip8::~chip8() {
+    t_thread.detach();
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
@@ -92,8 +109,7 @@ void chip8::update() {
     switch(opcode & 0xF000) {
         case 0x0000:
             if(opcode == 0x00E0) {
-                for(uint64_t& i: frame_buffer)
-                    i = 0;
+                clear_buffer();
             } else if(opcode == 0x00EE) {
                 if(sp < 0) {
                     std::cout << "Illegal return at PC: " << pc << std::endl;
@@ -214,13 +230,19 @@ void chip8::update() {
         case 0xF000:
             switch (opcode & 0x00FF) {
                 case 0x0007:
+                    t_mutex.lock();
                     Vx = dt;
+                    t_mutex.unlock();
                     break;
                 case 0x0015:
+                    t_mutex.lock();
                     dt = Vx;
+                    t_mutex.unlock();
                     break;
                 case 0x0018:
+                    t_mutex.lock();
                     st = Vx;
+                    t_mutex.unlock();
                     break;
                 case 0x001E:
                     if(index + Vx > 0x0FFF)
@@ -285,8 +307,8 @@ void chip8::render() {
 }
 
 void chip8::clear_buffer() {
-    for(int i = 0; i < 32; i++)
-        frame_buffer[i] = 0;
+    for(uint64_t& i: frame_buffer)
+        i = 0;
 }
 
 void chip8::set_pixel(int x, int y, bool b) {

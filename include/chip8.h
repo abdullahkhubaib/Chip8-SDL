@@ -8,6 +8,11 @@
 #include <random>
 #include <string>
 #include <bitset>
+#include <mutex>
+#include <thread>
+#include <chrono>
+#include <future>
+#include <windows.h>
 #include "SDL.h"
 #define SCALE_RATIO 16
 
@@ -20,6 +25,8 @@ private:
     std::array<uint8_t, 4096> mem;
     static const uint8_t characters[16][5];
     std::bitset<16> key;
+    std::mutex t_mutex;
+    std::thread t_thread;
     uint16_t index;
     uint16_t pc;
     uint8_t sp;
