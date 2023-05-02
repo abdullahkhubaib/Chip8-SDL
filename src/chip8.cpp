@@ -9,14 +9,14 @@ chip8::chip8(const std::string& fName) : V(), stack(), prev_frame(), frame_buffe
     st = 0;
     running = false;
     std::ifstream file(fName, std::ios::binary);
+    if(!file)
+        error("File doesn't exist.");
     // Get file size
     file.seekg(0, std::ios::end);
     auto size = file.tellg();
     file.seekg(0, std::ios::beg);
-    if(size > 0xDFF) {
-        std::cerr << "File too large" << std::endl;
-        exit(1);
-    }
+    if(size > 0xDFF)
+        error("File too large: " + fName);
     // Load file into memory starting at offset 0x200
     char c;
     for(int i = 0; file.get(c); i++)
@@ -110,22 +110,18 @@ void chip8::update() {
                 for(uint64_t& i: frame_buffer)
                     i = 0;
             } else if(opcode == 0x00EE) {
-                if(sp < 0) {
-                    std::cout << "Illegal return at PC: " << pc << std::endl;
-                    exit(1);
-                }
+                if(sp < 0)
+                    error("Illegal return at PC: " + std::to_string(pc));
                 pc = stack[--sp];
             } else
-                invalid_opcode(opcode);
+                invalid_opcode();
             break;
         case 0x1000:
             pc = opcode & 0x0FFF;
             break;
         case 0x2000:
-            if(sp > 0xF) {
-                std::cout << "Stack Overflow at PC: " << pc << std::endl;
-                exit(1);
-            }
+            if(sp > 0xF)
+                error("Stack Overflow at PC: " + std::to_string(pc));
             stack[sp++] = pc;
             pc = opcode & 0x0FFF;
             break;
@@ -139,7 +135,7 @@ void chip8::update() {
             break;
         case 0x5000:
             if(opcode & 0x000F)
-                invalid_opcode(opcode);
+                invalid_opcode();
             if(Vx == Vy)
                 pc += 2;
             break;
@@ -188,12 +184,12 @@ void chip8::update() {
                     Vx <<= 1;
                     break;
                 default:
-                    invalid_opcode(opcode);
+                    invalid_opcode();
             }
             break;
         case 0x9000:
             if(opcode & 0x000F)
-                invalid_opcode(opcode);
+                invalid_opcode();
             if(Vx != Vy)
                 pc += 2;
             break;
@@ -225,7 +221,7 @@ void chip8::update() {
         }
         case 0xE000:
             if((Vx > 0x000F) || ((opcode & 0x00FF) != 0x009E && (opcode & 0x00FF) != 0x00A1))
-                invalid_opcode(opcode);
+                invalid_opcode();
             if(((opcode & 0x00FF) == 0x009E && key[Vx]) || ((opcode & 0x00FF) == 0x00A1 && !key[Vx]))
                 pc += 2;
             break;
@@ -282,11 +278,11 @@ void chip8::update() {
                         V[i] = mem[index + i];
                     break;
                 default:
-                    invalid_opcode(opcode);
+                    invalid_opcode();
             }
             break;
         default:
-            invalid_opcode(opcode);
+            invalid_opcode();
     }
     asm("nop");
 }
@@ -308,9 +304,14 @@ void chip8::render() {
     SDL_RenderPresent(renderer);
 }
 
-void chip8::invalid_opcode(uint16_t opcode) {
-    std::cerr << "Invalid opcode " << opcode << std::endl;
+void chip8::invalid_opcode() const {
+    error("Invalid opcode at pc: " + std::to_string(pc - 2));
+}
+
+void chip8::error(const std::string& message) {
+    MessageBox(nullptr, message.c_str(), "Error", MB_ICONERROR | MB_OK);
     exit(1);
 }
+
 
 
