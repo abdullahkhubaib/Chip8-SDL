@@ -32,11 +32,6 @@ private:
     uint8_t sp;
     uint8_t dt;
     uint8_t st;
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    void clear_buffer();
-    void set_pixel(int x, int y, bool b);
-    void toggle_pixel(int x, int y);
     static void invalid_opcode(uint16_t opcode);
 
     std::mt19937 rng;
@@ -44,6 +39,8 @@ private:
 
 public:
     bool running;
+    SDL_Window* window;
+    SDL_Renderer* renderer;
     chip8(const std::string& fName);
     ~chip8();
     void handleEvents();

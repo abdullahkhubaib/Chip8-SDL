@@ -25,7 +25,7 @@ chip8::chip8(const std::string& fName) : V(), stack(), prev_frame(), frame_buffe
     SDL_Init(SDL_INIT_EVERYTHING);
     window = SDL_CreateWindow(("Chip 8 - " + fName).c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                               64 * SCALE_RATIO, 32 * SCALE_RATIO, SDL_WINDOW_SHOWN);
-    renderer = SDL_CreateRenderer(window, -1, 0);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_RenderSetScale(renderer, SCALE_RATIO, SCALE_RATIO);
     running = true;
 
@@ -48,7 +48,7 @@ chip8::chip8(const std::string& fName) : V(), stack(), prev_frame(), frame_buffe
                     Beep(523, 100);
             }
             t_mutex.unlock();
-            std::this_thread::sleep_for(std::chrono::nanoseconds(16666666));
+            std::this_thread::sleep_for(std::chrono::nanoseconds(16666666)); // 60 Hz
         }
     });
 
@@ -96,8 +96,6 @@ void chip8::handleEvents() {
             break;
     }
 
-    SDL_SetWindowTitle(window, key.to_string().c_str());
-
 
 }
 
@@ -109,7 +107,8 @@ void chip8::update() {
     switch(opcode & 0xF000) {
         case 0x0000:
             if(opcode == 0x00E0) {
-                clear_buffer();
+                for(uint64_t& i: frame_buffer)
+                    i = 0;
             } else if(opcode == 0x00EE) {
                 if(sp < 0) {
                     std::cout << "Illegal return at PC: " << pc << std::endl;
@@ -157,12 +156,15 @@ void chip8::update() {
                     break;
                 case 0x0001:
                     Vx = Vx | Vy;
+                    V[0xF] = 0;
                     break;
                 case 0x0002:
                     Vx = Vx & Vy;
+                    V[0xF] = 0;
                     break;
                 case 0x0003:
                     Vx = Vx ^ Vy;
+                    V[0xF] = 0;
                     break;
                 case 0x0004:
                     if(Vx + Vy > 255)
@@ -304,22 +306,6 @@ void chip8::render() {
         }
     }
     SDL_RenderPresent(renderer);
-}
-
-void chip8::clear_buffer() {
-    for(uint64_t& i: frame_buffer)
-        i = 0;
-}
-
-void chip8::set_pixel(int x, int y, bool b) {
-    if(b)
-        frame_buffer[y] |= 1ULL << (63ULL - x);
-    else
-        frame_buffer[y] &= ~(1ULL << (63ULL - x));
-}
-
-void chip8::toggle_pixel(int x, int y) {
-    frame_buffer[y] ^= 1ULL << (63ULL - x);
 }
 
 void chip8::invalid_opcode(uint16_t opcode) {
